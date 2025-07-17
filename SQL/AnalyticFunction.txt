@@ -1,0 +1,211 @@
+--프레임생략 시 파티션 전체의 합을 행마다 출력
+SELECT manager_id, last_name, salary,
+       SUM(salary) OVER (PARTITION BY manager_id) AS "MgrSum"
+FROM employees; 
+
+--파티션 내 현재 행까지의 프레임에 대한 급여 총합 출력 
+--윈도우프레임:RANGE [BETWEEN] UNBOUNDED PRECEDING [AND CURRENT ROW]
+SELECT manager_id, last_name, salary,
+       SUM(salary) OVER (PARTITION BY manager_id ORDER BY salary
+       RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "MgrSum"
+FROM employees; 
+--윈도우 프레임을 ROWS UNBOUNDED PRECEDING으로 설정한 경우 동률의 급여를 별도처리
+SELECT manager_id, last_name, salary,
+       SUM(salary) OVER (PARTITION BY manager_id ORDER BY salary
+       ROWS UNBOUNDED PRECEDING) AS "MgrSum"
+FROM employees; 
+
+--현재 행 기준 앞,뒤 1개씩 총3개행의 급여 합
+SELECT manager_id, last_name, salary,
+       SUM(salary) OVER (PARTITION BY manager_id ORDER BY salary
+       ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS "MgrSum"
+FROM employees; 
+
+--현재 행의 급여에서 -1000부터 +1000까지가 하나의 프레임
+SELECT manager_id, last_name, salary,
+       SUM(salary) OVER (PARTITION BY manager_id ORDER BY salary
+       RANGE BETWEEN 1000 PRECEDING AND 1000 FOLLOWING) AS "MgrSum"
+FROM employees; 
+
+--부서 내 최소, 최대 급여를 출력
+SELECT department_id, last_name, salary,
+       MIN(salary) OVER (PARTITION BY department_id) AS dept_min,
+       MAX(salary) OVER (PARTITION BY department_id) AS dept_max
+FROM employees;   
+--부서 별 파티션 내에서 급여로 정렬했을때 현재 행까지에서의 최대, 최소급여를 출력
+SELECT department_id, last_name, salary,
+       MIN(salary) OVER (PARTITION BY department_id ORDER BY salary
+       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS dept_min,
+       MAX(salary) OVER (PARTITION BY department_id ORDER BY salary
+       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS dept_max
+FROM employees;  
+
+--이동범위 내 행 기준 앞, 뒤 2개의 행 즉 5개의 행 중 최대/최소값을 계산하여 출력
+SELECT department_id, last_name, salary,
+       MIN(salary) OVER (PARTITION BY department_id ORDER BY salary
+       ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS dept_min,
+       MAX(salary) OVER (PARTITION BY department_id ORDER BY salary
+       ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS dept_max
+FROM employees;
+
+--이동범위 내 현재 행 기준 -2000~+2000범위에 해당하는 급여 중 최대/최소값을 계산하여 출력
+SELECT department_id, last_name, salary,
+       MIN(salary) OVER (PARTITION BY department_id ORDER BY salary
+       RANGE BETWEEN 2000 PRECEDING AND 2000 FOLLOWING) AS dept_min,
+       MAX(salary) OVER (PARTITION BY department_id ORDER BY salary
+       RANGE BETWEEN 2000 PRECEDING AND 2000 FOLLOWING) AS dept_max
+FROM employees; 
+
+--현재 행까지의 같은 부서내 사원들에대한 평균 급여를 표시
+--윈도우 프레임이 없기때문에 현재행까지의 누적 평균급여 출력
+SELECT department_id, last_name, hire_date, salary,
+       AVG(salary) OVER (PARTITION BY department_id ORDER BY hire_date) as dept_avg
+FROM employees; 
+
+--윈도우 함수를 일반함수로 중첩
+SELECT department_id, last_name, hire_date, salary,
+       ROUND(AVG(salary) OVER (PARTITION BY department_id ORDER BY hire_date),0) as dept_avg
+FROM employees; 
+
+--현재 행 기준 앞, 뒤 한 행씩 3개의 행에 대한 평균급여 출력
+SELECT department_id, last_name, hire_date, salary,
+       ROUND(AVG(salary) OVER (PARTITION BY department_id ORDER BY hire_date
+       ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)) as dept_avg
+FROM employees;
+
+--급여를 기준으로 정렬하고 현재행 사원의 급여기준 -1000~+2000 사이의 급여를 받는 
+--인원수를 출력
+SELECT employee_id, last_name, salary,
+       COUNT(*) OVER (ORDER BY salary RANGE BETWEEN 1000 PRECEDING 
+       AND 2000 FOLLOWING) as emp_count
+FROM employees;   
+
+--부서 별 최대 급여를 받는 직원의 이름이 함께 출력
+SELECT department_id, last_name, salary, 
+        FIRST_VALUE(last_name) OVER (PARTITION BY department_id 
+        ORDER BY salary DESC ROWS UNBOUNDED PRECEDING) as DEPT_RICH 
+FROM employees; 
+--부서 별 최소 급여를 받는 직원의 이름이 함께 출력
+SELECT department_id, last_name, salary, 
+        FIRST_VALUE(last_name) OVER (PARTITION BY department_id 
+        ORDER BY salary ROWS UNBOUNDED PRECEDING) as DEPT_RICH 
+FROM employees; 
+
+--LAST_VALUE
+SELECT department_id, last_name, salary, 
+        LAST_VALUE(last_name) OVER (PARTITION BY department_id 
+        ORDER BY salary DESC ROWS UNBOUNDED PRECEDING) as DEPT_RICH
+FROM employees; 
+
+--입사일 기준으로 정렬하여, 현재 행 사원의 입사일 직전에 입사한 직원의 입사일을 함께 표시
+SELECT last_name, salary, hire_date,
+       LAG(hire_date,1) OVER (ORDER BY hire_date) as prev_hiredate
+FROM employees;     
+--LAG 변형
+SELECT last_name, salary, hire_date,
+       LAG(hire_date,2) OVER (ORDER BY hire_date) as prev_hiredate
+FROM employees;
+
+--입사일 순으로 정렬한 후 이전 입사자의 급여를 함께 출력
+SELECT last_name, salary, hire_date,
+       LAG(salary) OVER (ORDER BY hire_date) as prev_hiredate
+FROM employees;
+
+--부서별 급여순으로 정렬하고 이전 직원의 급여와 함께 출력
+SELECT department_id,last_name, salary, hire_date,
+       LAG(salary) OVER (PARTITION BY department_id ORDER BY salary) as prev_salary
+FROM employees;
+
+--(LAG활용)전체 직원을 대상으로 급여순으로 정렬한 후 급여간의 격차를 출력
+SELECT employee_id, last_name, salary, hire_date,
+       LAG(salary) OVER (ORDER BY salary) as prev_salary,
+       salary - LAG(salary) OVER (ORDER BY salary) as diff_sal
+FROM employees;
+
+--LEAD 함수로 현재 행 사원입사일 다음의 입사일을 함께 출력
+SELECT last_name, hire_date, 
+       LEAD(hire_date) OVER (ORDER BY hire_date) as "NEXTHIRED" 
+FROM employees;
+
+--다음 입사일까지의 일수 
+SELECT last_name, hire_date, 
+       LEAD(hire_date) OVER (ORDER BY hire_date) as "NEXTHIRED",
+       TRUNC(LEAD(hire_date) OVER (ORDER BY hire_date) - hire_date) as interval
+FROM employees;
+
+--기본값 적용
+SELECT last_name, hire_date, 
+       LEAD(hire_date,1, TO_DATE('2025/01/01','yyyy/mm/dd')) OVER (ORDER BY hire_date) as "NEXTHIRED" 
+FROM employees;
+
+--전체 사원대상 전체 급여의 합에서 해당 급여가 차지하는 비율 출력
+SELECT last_name, job_id, salary, 
+        ROUND(RATIO_TO_REPORT(salary) OVER (), 2) as R_R 
+FROM employees;
+
+--LEAD 함수에 기본값 적용
+SELECT last_name, hire_date, 
+       LEAD(hire_date,1, TO_DATE('2025/01/01','yyyy/mm/dd')) OVER (ORDER BY hire_date) as "NEXTHIRED" 
+FROM employees;
+
+--IT_PROG 업무 사원 대상 전체 급여의 합에서 해당 급여가 차지하는 비율 출력
+SELECT last_name, job_id, salary, 
+        ROUND(RATIO_TO_REPORT(salary) OVER (), 2) as R_R 
+FROM employees
+WHERE job_id LIKE 'IT%';
+
+--결과를 백분위(%)로 출력
+SELECT last_name, job_id, salary, 
+        ROUND(RATIO_TO_REPORT(salary) OVER (), 2)*100||'%' as R_R 
+FROM employees
+WHERE job_id LIKE 'IT%';
+
+--IT_PROG 업무 사원 대상 전체 급여의 합에서 해당 급여가 차지하는 비율 출력
+SELECT last_name, job_id, salary, 
+        ROUND(RATIO_TO_REPORT(salary) OVER (), 2) as R_R 
+FROM employees
+WHERE job_id LIKE 'IT%';
+
+--결과를 백분위(%)로 출력
+SELECT last_name, job_id, salary, 
+        ROUND(RATIO_TO_REPORT(salary) OVER (), 2)*100||'%' as R_R 
+FROM employees
+WHERE job_id LIKE 'IT%';
+
+--부서 별 급여 분산 정도를 분석
+SELECT department_id, last_name, salary,
+       ROUND(RATIO_TO_REPORT(salary) 
+       OVER (PARTITION BY department_id), 2) AS ratio_by_dept
+FROM employees; 
+
+--(활용)각 업무 내에서 급여비중이 30%를 초과하는 직원의 사번, 이름, 업무ID, 급여를 출력
+--(힌트)window function은 where 절에 쓸 수없으므로 인라인뷰로 작성
+SELECT *
+FROM (SELECT job_id, employee_id, last_name, salary,
+       ROUND(RATIO_TO_REPORT(salary) 
+       OVER (PARTITION BY job_id), 2) AS ratio_by_job
+      FROM employees)
+WHERE ratio_by_job > 0.3 ;  
+
+--부서별, 전체 사원 중에 현재 행의 사원급여가 순서상 몇번째인지 파악할 수 있는 값 출력
+SELECT department_id, last_name, salary, 
+       PERCENT_RANK() OVER (PARTITION BY department_id 
+       ORDER BY salary DESC) as P_R 
+FROM employees;
+
+SELECT department_id, last_name, salary, 
+       ROUND(PERCENT_RANK() OVER (ORDER BY salary DESC),4) as P_R 
+FROM employees;
+
+--부서 내 소속사원들에서 현재 사원의 급여가 누적순서상 몇번째 인지를 출력
+SELECT department_id, last_name, salary, 
+       ROUND(PERCENT_RANK() OVER (PARTITION BY department_id 
+       ORDER BY salary DESC),4) as P_R,
+       ROUND(CUME_DIST() OVER (PARTITION BY department_id 
+       ORDER BY salary DESC),4) as C_R 
+FROM employees;
+
+--NTILE(n)로 파티션 또는 전체 데이터를 n등분
+SELECT last_name, salary, 
+       NTILE(10) OVER (ORDER BY salary DESC) as QUAR_TILE 
+FROM employees;
