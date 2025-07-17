@@ -1,0 +1,43 @@
+1. VMWare에 Ubuntu Server 설치(Core 2개 이상, 메모리 4GB 이상, 디스크 40GB)
+
+2. root 사용자로 전환 후 docker 설치 용 Shell Script(install_docker_ubuntu.sh) 작성 
+sudo -i
+vi install_docker_ubuntu.sh 
+
+3. 도커설치 스크립트 권한 변경 후 실행
+chmod +x install_docker_ubuntu.sh
+
+4. Oracle DB Container 실행 
+docker run -d --name oracle-xe -p 1521:1521 -e ORACLE_PWD=oracle cielciel/myoracle21:1.0
+
+5. 컨테이너 실행 확인
+docker ps 
+
+6. 가상머신 IP 주소 확인
+ip a 
+
+7. SQLDeveloper에서 관리자의 접속 설정 
+
+Name : 관리자
+사용자이름 : SYS
+암호 : oracle
+롤 : SYSDBA
+호스트이름 : 가상머신의 IP
+포트: 1521
+SID : xe
+
+8. 관리자 접속 후 C##HR 사용자 및 예제데이터 생성 
+@C:\human_resources\hr_install.sql 
+
+9. SQLDeveloper에서 C##HR의 접속 설정 
+
+Name : 인사관리
+사용자이름 : C##HR
+암호 : oracle
+롤 : 기본값
+호스트이름 : 가상머신의 IP
+포트: 1521
+SID : xe
+
+
+
