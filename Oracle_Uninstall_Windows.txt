@@ -1,0 +1,14 @@
+# 윈도우 시스템에서 오라클 삭제 방법 
+
+1. 윈도우 설정 >> 앱 >> 설치된 앱 >> Oracle 제거(프로그램 추가/제거)
+
+2. C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Oracle - OraDB18Home1 폴더 삭제
+
+3. 윈도우 실행창 >> regedit (레지스트리 편집기) 실행 >> HKEY_LOCAL_MACHINE 
+   - SOFTWARE >> ORACLE 삭제
+   - SYSTEM >> ControlSet001 >> Oracle 관련 항목 모두 삭제 
+
+4. 시스템 재부팅
+
+5. C:\app\ciel7\product 폴더 삭제 혹은 C:\app 삭제
+
