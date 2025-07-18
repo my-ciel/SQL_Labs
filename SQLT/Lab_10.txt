@@ -34,15 +34,28 @@ FROM emp;
 1. 현재 Optimizer Mode의 설정값을 확인합니다. 초기 값은 ALL_ROWS 입니다.
 show parameter optimizer_mode 
 
-2. 다음 명령문의 실행계획을 확인합니다. 
+2. 메모리를 초기화 한 다음 명령문의 실행계획을 확인합니다. 
 ALTER SYSTEM FLUSH shared_pool;
+EXPLAIN PLAN FOR
 SELECT *
 FROM   emp e JOIN departments d
 ON  (e.department_id = d.department_id)
 AND e.email='SSTILESS' OR d.department_name='Treasury';
 
-3. Optimizer Mode를 세션레벨에서 FIRST_ROWS_1로 변경합니다.
-ALTER SESSION SET optimizer_mode=first_rows_1;
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
+
+3. Optimizer Mode를 시스템레벨에서 FIRST_ROWS_1로 변경합니다.
+ALTER SYSTEM SET optimizer_mode=first_rows_1;
+
+4. 이전에 실행했던 쿼리를 다시 실행하며 최적화 모드에 따른 실행계획의 변경을 확인합니다.
+ALTER SYSTEM FLUSH shared_pool;
+EXPLAIN PLAN FOR
+SELECT *
+FROM   emp e JOIN departments d
+ON  (e.department_id = d.department_id)
+AND e.email='SSTILESS' OR d.department_name='Treasury';
+
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
 
 ###################################################################################### 
 # TEST 3 : 객체 통계 관리 TEST 
